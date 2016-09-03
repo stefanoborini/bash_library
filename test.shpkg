@@ -1,0 +1,422 @@
+#! <Package>
+#!   test
+#! </Package>
+#! <Version>
+#!   0:0:0
+#! </Version>
+#! <Depends_on_package>
+#!  none
+#! </Depends_on_package>
+#! <Globals>
+#!    test_VERBOSITY: affects the verbosity level
+#!
+#!        0 or undef: low noise
+#!                 1: high noise
+#! </Globals>
+#! <Package_description>
+#!   a package for testcases
+#! </Package_description>
+
+#! <Function_name>
+#!  test_testChecking
+#! </Function_name>
+#! <Function_description>
+#!   Report a message for the current test
+#! </Function_description>
+#! <Parameters>
+#!   $1: name of the test running
+#! </Parameters>
+#! <Return_value>
+#!   None. It does not touch RETURN to simplify testing
+#! </Return_value>
+#! <Return_code>
+#!   always 0
+#! </Return_code>
+
+function test_checking {
+
+	if test "x$test_VERBOSITY" = "x1"
+	then
+		echo -n "checking $1... " 
+		return 0
+	fi
+
+	return 0
+}
+
+#! <Function_name>
+#!  test_testSuccess
+#! </Function_name>
+#! <Function_description>
+#!   Report the success of a test
+#! </Function_description>
+#! <Parameters>
+#!   None.
+#! </Parameters>
+#! <Return_value>
+#!   None. It does not touch RETURN to simplify testing
+#! </Return_value>
+#! <Return_code>
+#!   always 0
+#! </Return_code>
+
+function test_testSuccess {
+
+	if test "x$test_VERBOSITY" = "x1"
+	then
+		echo "OK" 
+	else 
+		echo -n "."
+	fi
+
+	test_successCount=`expr $test_successCount + 1`
+	return 0
+}
+
+#! <Function_name>
+#!  test_testFailed
+#! </Function_name>
+#! <Function_description>
+#!   Report the insuccess of a test
+#! </Function_description>
+#! <Parameters>
+#!   None.
+#! </Parameters>
+#! <Return_value>
+#!   None. It does not touch RETURN to simplify testing
+#! </Return_value>
+#! <Return_code>
+#!   always 0
+#! </Return_code>
+
+function test_testFailed {
+
+	if test "x$test_VERBOSITY" = "x1"
+	then
+		echo "FAILED" 
+	else
+		echo -n "E"
+	fi
+
+	test_failedCount=`expr $test_failedCount + 1`
+	return 0
+}
+
+#! <Function_name>
+#!  test_createTempDir
+#! </Function_name>
+#! <Function_description>
+#!   Create a temporary directory for doing tests
+#! </Function_description>
+#! <Parameters>
+#!   None
+#! </Parameters>
+#! <Return_value>
+#!   RETURN is set to the name of the temporary directory created,
+#!   or an empty string in case of error
+#! </Return_value>
+#! <Return_code>
+#!   0 if everything ok, 1 otherwise
+#! </Return_code>
+
+function test_createTempDir {
+
+	RETURN=`mktemp -d /tmp/shelltestsuite-XXXXXX`
+
+	if test "x$?" = "x0"
+	then
+		return 0
+	else
+		RETURN=""
+		return 1
+	fi
+}
+
+#! <Function_name>
+#!  test_createTempFile
+#! </Function_name>
+#! <Function_description>
+#!   Create a temporary file for doing tests
+#! </Function_description>
+#! <Parameters>
+#!   None
+#! </Parameters>
+#! <Return_value>
+#!   RETURN is set to the name of the temporary file created,
+#!   or an empty string in case of error
+#! </Return_value>
+#! <Return_code>
+#!   0 if everything ok, 1 otherwise
+#! </Return_code>
+
+function test_createTempFile {
+
+	RETURN=`mktemp /tmp/shelltestsuite-XXXXXX`
+
+	if test "x$?" = "x0"
+	then
+		return 0
+	else
+		RETURN=""
+		return 1
+	fi
+}
+
+#! <Function_name>
+#!  test_checkMD5
+#! </Function_name>
+#! <Function_description>
+#!   Check the md5sum of a file
+#! </Function_description>
+#! <Parameters>
+#!   $1 file name to check
+#!   $2 the expected md5sum
+#! </Parameters>
+#! <Return_value>
+#!   None. It does not touch RETURN to simplify testing.
+#! </Return_value>
+#! <Return_code>
+#!   0 if everything ok, 1 otherwise
+#! </Return_code>
+
+function test_checkMD5 {
+	local msg
+	local tmp
+
+	msg="md5sum of \"$1\""
+	test_checking "$msg"
+	tmp=`md5sum "$1" | awk '{print $1}'`
+
+	if test "x$tmp" != "x" -a "x$tmp" = "x$2"
+	then
+		test_testSuccess
+		return 0
+	else
+		test_testFailed
+		return 1
+	fi
+}
+
+#! <Function_name>
+#!  test_checkRegExpExists
+#! </Function_name>
+#! <Function_description>
+#!   Check if a regexp exists inside a file
+#! </Function_description>
+#! <Parameters>
+#!   $1 file name to check
+#!   $2 the expected md5sum
+#! </Parameters>
+#! <Return_value>
+#!   None. It does not touch RETURN to simplify testing.
+#! </Return_value>
+#! <Return_code>
+#!   0 if everything ok, 1 otherwise
+#! </Return_code>
+
+function test_checkRegExpExists {
+	local msg
+	local tmp
+
+	msg="if regexp \"$1\" exists"
+	test_checking "$msg"
+	tmp=`grep -E -e "$1" "$2"`
+
+	if test "x$tmp" != "x"
+	then
+		test_testSuccess 
+		return 0
+	else
+		test_testFailed
+		return 1
+	fi
+}
+
+#! <Function_name>
+#!  test_checkMultilineExists
+#! </Function_name>
+#! <Function_description>
+#!   Check if a set of lines exists inside a file
+#! </Function_description>
+#! <Parameters>
+#!   $1 file name to check
+#!   $2 the expected md5sum
+#! </Parameters>
+#! <Return_value>
+#!   None. It does not touch RETURN to simplify testing.
+#! </Return_value>
+#! <Return_code>
+#!   0 if everything ok, 1 otherwise
+#! </Return_code>
+
+function test_checkMultilineExists {
+
+	local tmpfile
+	local i
+	local saveRet="$RETURN"
+	test_checking "for multiline check on $1"
+	
+	test_createTempFile
+	tmpfile="$RETURN"
+	>$tmpfile
+
+	RETURN="$saveRet"
+
+	local lineNum
+	local textLine
+
+	read i
+	local search
+	search=`echo "$i"`
+	lines=`grep -n -- "$i" "$1"| cut -d':' -f 1`
+	local nextLines
+	local count=1
+	local next
+		
+	while read i
+	do
+		search=`echo -e "$search\\n$i"`
+		echo "$i" >$tmpfile
+		nextLines=""
+		for lineNum in $lines
+		do
+			next=`expr $lineNum + $count`
+			
+			textLine=`sed -n "${next}p" "$1" | diff --ignore-all-space - $tmpfile`
+			if test "x$textLine" = "x"
+			then
+				nextLines="$nextLines $lineNum"
+			fi
+	
+		done
+		count=`expr $count + 1`
+		lines="$nextLines"
+	done
+			
+	if test "x$lines" != "x"
+	then
+		test_testSuccess
+	else
+		test_testFailed
+		if test "x$test_VERBOSITY" = "x1"
+		then
+			echo "searched:"
+			echo "$search"
+			echo "found:"
+			echo "$lines"
+		fi
+	fi
+
+	rm $tmpfile
+			
+	return 0
+	
+
+}
+
+
+#! <Function_name>
+#!  test_checkMultilineRegExpExists
+#! </Function_name>
+#! <Function_description>
+#!   Check if a set of lines exists inside a file
+#! </Function_description>
+#! <Parameters>
+#!   $1 file name to check
+#! </Parameters>
+#! <Return_value>
+#!   None. It does not touch RETURN to simplify testing.
+#! </Return_value>
+#! <Return_code>
+#!   0 if everything ok, 1 otherwise
+#! </Return_code>
+#! <bugs>
+#!   does not work for a single line. need fix.
+#!   does not report the line that does not match.
+#! </bugs>
+
+function test_checkMultilineRegExpExists {
+
+	local tmpfile
+	local i
+	local lineNum
+	local textLine
+
+	test_checking "for multiline regexp check on $1"
+
+	read -r i
+	local search
+	search=`echo "$i"`
+	lines=`grep -nE -- "$i" "$1"| cut -d':' -f 1`
+	local nextLines
+	local count=1
+	local next
+		
+	while read -r i
+	do
+		nextLines=""
+		for lineNum in $lines
+		do
+			next=`expr $lineNum + $count`
+			
+			textLine=`sed -n "${next}p" "$1" | grep -E -- "$i"`
+			if test "x$?" = "x0"
+			then
+				nextLines="$nextLines $lineNum"
+			fi
+	
+		done
+		count=`expr $count + 1`
+		lines="$nextLines"
+		if test "x$lines" = "x"
+		then
+			test_testFailed
+			if test "x$test_VERBOSITY" = "x1"
+			then
+				echo "searched:"
+				echo "$i"
+				echo "found:"
+				echo "$textLine"
+			fi
+			return 0
+		fi
+	done
+			
+	test_testSuccess
+			
+	return 0
+	
+
+}
+
+
+
+
+#! <Function_name>
+#!  test_finalReport
+#! </Function_name>
+#! <Function_description>
+#!   print the final report
+#! </Function_description>
+#! <Parameters>
+#!   None.
+#! </Parameters>
+#! <Return_value>
+#!   None. It does not touch RETURN to simplify testing.
+#! </Return_value>
+#! <Return_code>
+#!   Always 0 
+#! </Return_code>
+
+function test_finalReport {
+
+	echo
+	echo
+	echo "Test finished. $test_successCount successful. $test_failedCount failed."
+	echo
+
+}
+
+test_successCount=0
+test_failedCount=0
+

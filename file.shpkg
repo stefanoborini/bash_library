@@ -1,0 +1,84 @@
+#! <Package_name>
+#!   file
+#! </Package_name>
+#!
+#! <Package_version>
+#!   0:0:0
+#! </Package_version>
+#! 
+#! <Depends_on_package>
+#!   None
+#! </Depends_on_package>
+#! <Globals>
+#!   None
+#! </Globals>
+#! <Package_description>
+#!   Various function to manage file operations and checks
+#! </Package_description>
+
+
+#! <Function_name>
+#!  file_checkFileExists
+#! </Function_name>
+#! <Function_description>
+#!   check if a file exists. 
+#!   If it does not exists return 1, else return 0
+#!   both in the RETURN value and as return code
+#! </Function_description>
+#! <Function_parameters>
+#!   $1 : filename to check
+#! </Function_parameters>
+#! <Return_value>
+#!   0 if file exists, 1 if not exists
+#! </Return_value>
+#! <Return_code>
+#!   0 if file exists, 1 if not exists
+#! </Return_code>
+#
+function file_checkFileExists {
+	RETURN="NEVER"
+
+	# be explicit. always
+	if test -e "$1"
+	then
+		RETURN="0"
+		return 0
+	else
+		RETURN="1"
+		return 1
+	fi
+
+}
+
+
+#! <Function_name>
+#!  file_createDir
+#! </Function_name>
+#! <Function_description>
+#!   Create a directory recursively. It's a wrapper on mkdir -p
+#! </Function_description>
+#! <Function_parameters>
+#!   $1 : filename to check
+#! </Function_parameters>
+#! <Return_value>
+#!   0 if success, else 1
+#! </Return_value>
+#! <Return_code>
+#!   0 if success, else 1
+#! </Return_code>
+
+function file_createDir {
+	RETURN="NEVER"
+
+	mkdir -p "$1"
+	if test "x$?" = "x0"
+	then
+		RETURN="0"
+		return 0
+	else
+		RETURN="1"
+		return 1
+	fi
+
+}
+

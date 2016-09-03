@@ -1,0 +1,47 @@
+# Package: assert
+# Depends on package: file
+
+. file.sh
+
+# Description:
+# check if a file exists. 
+# If it does not exists, it exits the script
+#
+# Parameters:
+#  $1 : filename to check
+
+
+function assert_checkFileExists { 
+
+	RETURN=""
+
+	if file_checkFileExists "$1"
+	then
+		return 0
+	else
+		echo "[assert] assertion checkFileExists \"$1\" failed."
+		exit
+	fi
+}
+	
+# Description:
+# check if a file does not exists.
+# If it exists, it exits the script
+#
+# Parameters:
+#  $1 : filename to check
+function assert_checkFileNotExists { 
+
+	RETURN=""
+
+	if file_checkFileExists "$1"
+	then
+		echo "[assert] assertion checkFileNotExists \"$1\" failed."
+		exit
+	else
+		return 0
+	fi
+}
+
+
+
